@@ -12,16 +12,19 @@ import pandas as pd
 import codecs
 from subword_nmt.apply_bpe import BPE
 from Step1_getData import GetData
+import pdb
 
 class DataEncoding:
-    def __init__(self,vocab_dir):
+    def __init__(self, vocab_dir):
         self.vocab_dir = vocab_dir
         # 一个获取数据的函数类
         self.Getdata = GetData()
 
-    def _drug2emb_encoder(self,smile):
-        vocab_path = "{}/ESPF/drug_codes_chembl_freq_1500.txt".format(self.vocab_dir)
-        sub_csv = pd.read_csv("{}/ESPF/subword_units_map_chembl_freq_1500.csv".format(self.vocab_dir))
+    def _drug2emb_encoder(self, smile):
+        vocab_path = "ESPF/drug_codes_chembl_freq_1500.txt".format(
+            self.vocab_dir)
+        sub_csv = pd.read_csv(
+            "ESPF/subword_units_map_chembl_freq_1500.csv".format(self.vocab_dir))
 
         bpe_codes_drug = codecs.open(vocab_path)
         dbpe = BPE(bpe_codes_drug, merges=-1, separator='')
@@ -46,16 +49,20 @@ class DataEncoding:
 
         return i, np.asarray(input_mask)
 
-    def encode(self,traindata,testdata):
+    def encode(self, traindata, testdata):
         drug_smiles = self.Getdata.getDrug()
-        drugid2smile = dict(zip(drug_smiles['drug_id'],drug_smiles['smiles']))
-        smile_encode = pd.Series(drug_smiles['smiles'].unique()).apply(self._drug2emb_encoder)
-        uniq_smile_dict = dict(zip(drug_smiles['smiles'].unique(),smile_encode))
+        drugid2smile = dict(zip(drug_smiles['drug_id'], drug_smiles['smiles']))
+        smile_encode = pd.Series(drug_smiles['smiles'].unique()).apply(
+            self._drug2emb_encoder)
+        uniq_smile_dict = dict(
+            zip(drug_smiles['smiles'].unique(), smile_encode))
 
         traindata['smiles'] = [drugid2smile[i] for i in traindata['DRUG_ID']]
         testdata['smiles'] = [drugid2smile[i] for i in testdata['DRUG_ID']]
-        traindata['drug_encoding'] = [uniq_smile_dict[i] for i in traindata['smiles']]
-        testdata['drug_encoding'] = [uniq_smile_dict[i] for i in testdata['smiles']]
+        traindata['drug_encoding'] = [uniq_smile_dict[i]
+                                      for i in traindata['smiles']]
+        testdata['drug_encoding'] = [uniq_smile_dict[i]
+                                     for i in testdata['smiles']]
         traindata = traindata.reset_index()
         traindata['Label'] = traindata['LN_IC50']
         testdata = testdata.reset_index()
@@ -68,13 +75,15 @@ class DataEncoding:
         test_rnadata = test_rnadata.T
         train_rnadata.index = range(train_rnadata.shape[0])
         test_rnadata.index = range(test_rnadata.shape[0])
+        # pdb.set_trace()
 
         return traindata, train_rnadata, testdata, test_rnadata
 
+
 if __name__ == '__main__':
-    vocab_dir = '/home/jlk/Project/023_CancerTrans/DeepTTC'
+    vocab_dir = 'DeepTTC'
     obj = DataEncoding(vocab_dir=vocab_dir)
-    traindata, testdata = obj.Getdata.ByCancer(random_seed= 1)
+    traindata, testdata = obj.Getdata.ByCancer(random_seed=1)
 
     traindata, train_rnadata, testdata, test_rnadata = obj.encode(
         traindata=traindata,
